@@ -1,6 +1,7 @@
 import { useViewport } from "@follow/components/hooks/useViewport.js"
 import { ActionButton, Button, IconButton } from "@follow/components/ui/button/index.js"
 import { RootPortal } from "@follow/components/ui/portal/index.jsx"
+import { useCountdown } from "@follow/hooks"
 import { cn, getOS } from "@follow/utils/utils"
 import { AnimatePresence, m } from "framer-motion"
 import type { FC, ReactNode } from "react"
@@ -186,14 +187,19 @@ const Popup = ({ which, containerRef, setPopoverRef, setShow, handleMarkAllAsRea
 
 const ConfirmMarkAllReadInfo = ({ undo }: { undo: () => any }) => {
   const { t } = useTranslation()
+  const [countdown] = useCountdown({ countStart: 3 })
+
   useHotkeys("ctrl+z,meta+z", undo, {
     scopes: HotKeyScopeMap.Home,
     preventDefault: true,
   })
+
   return (
     <div>
       <p>{t("mark_all_read_button.confirm_mark_all_info")}</p>
-      <small className="opacity-50">{t("mark_all_read_button.auto_confirm_info")}</small>
+      <small className="opacity-50">
+        {t("mark_all_read_button.auto_confirm_info", { countdown })}
+      </small>
     </div>
   )
 }
