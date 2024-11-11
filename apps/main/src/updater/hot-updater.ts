@@ -45,7 +45,7 @@ const getLatestReleaseTag = memoize(async () => {
     const json = (await res.json()) as GitHubReleasesItem[]
 
     // Search the top nightly release
-    const nightlyRelease = json.find((item) => item.prerelease)
+    const nightlyRelease = json.find((item) => item.prerelease && item.tag_name.includes("nightly"))
     if (!nightlyRelease) return json[0].tag_name
     return nightlyRelease.tag_name
   }
