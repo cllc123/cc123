@@ -1,17 +1,18 @@
 import { getRendererHandlers } from "@egoist/tipc/main"
-import { autoUpdater as defaultAutoUpdater } from "electron-updater"
 
-import { channel, isDev, isWindows } from "../env"
+import { GITHUB_OWNER, GITHUB_REPO } from "~/constants/app"
+import { hotUpdateRender } from "~/updater/hot-updater"
+
+import { channel, isDev } from "../env"
 import { logger } from "../logger"
 import type { RendererHandlers } from "../renderer-handlers"
 import { destroyMainWindow, getMainWindow } from "../window"
+import { appUpdaterConfig } from "./configs"
 import { CustomGitHubProvider } from "./custom-github-provider"
-import { WindowsUpdater } from "./windows-updater"
+import { autoUpdater } from "./electron-updater"
+import { shouldUpdateApp } from "./utils"
 
-// skip auto update in dev mode
-const disabled = isDev
-
-const autoUpdater = isWindows ? new WindowsUpdater() : defaultAutoUpdater
+const disabled = !appUpdaterConfig.enableAppUpdate
 
 export const quitAndInstall = () => {
   const mainWindow = getMainWindow()
@@ -28,32 +29,23 @@ export const quitAndInstall = () => {
 let downloading = false
 let checkingUpdate = false
 
-export type UpdaterConfig = {
-  autoCheckUpdate: boolean
-  autoDownloadUpdate: boolean
-  checkUpdateInterval: number
-}
-
-const config: UpdaterConfig = {
-  autoCheckUpdate: true,
-  autoDownloadUpdate: true,
-  checkUpdateInterval: 15 * 60 * 1000,
-}
-
-export const checkForUpdates = async () => {
+export const checkForAppUpdates = async () => {
   if (disabled || checkingUpdate) {
     return
   }
+
   checkingUpdate = true
   try {
-    const info = await autoUpdater.checkForUpdates()
+    const [info] = await Promise.all([autoUpdater.checkForUpdates(), hotUpdateRender()])
     return info
+  } catch (e) {
+    logger.error("Error checking for updates", e)
   } finally {
     checkingUpdate = false
   }
 }
 
-export const downloadUpdate = async () => {
+export const downloadAppUpdate = async () => {
   if (disabled || downloading) {
     return
   }
@@ -71,8 +63,7 @@ export const registerUpdater = async () => {
     return
   }
 
-  const allowAutoUpdate = true
-
+  // Disable there, control this in event
   autoUpdater.autoDownload = false
   autoUpdater.allowPrerelease = channel !== "stable"
   autoUpdater.autoInstallOnAppQuit = true
@@ -82,8 +73,8 @@ export const registerUpdater = async () => {
     channel,
     // hack for custom provider
     provider: "custom" as "github",
-    repo: "follow",
-    owner: "RSSNext",
+    repo: GITHUB_REPO,
+    owner: GITHUB_OWNER,
     releaseType: channel === "stable" ? "release" : "prerelease",
     // @ts-expect-error hack for custom provider
     updateProvider: CustomGitHubProvider,
@@ -102,8 +93,22 @@ export const registerUpdater = async () => {
   })
   autoUpdater.on("update-available", (info) => {
     logger.info("Update available", info)
-    if (config.autoDownloadUpdate && allowAutoUpdate) {
-      downloadUpdate().catch((err) => {
+
+    // The app hotfix strategy is as follows:
+    // Determine whether the app should be updated in full or only the renderer layer based on the version number.
+    // https://www.notion.so/rss3/Follow-Hotfix-Electron-Renderer-layer-RFC-fe2444b9ac194c2cb38f9fa0bb1ef3c1?pvs=4#12e35ea049b480f1b268f1e605d86a62
+    if (appUpdaterConfig.enableRenderHotUpdate) {
+      const currentVersion = autoUpdater.currentVersion?.version
+      const nextVersion = info.version
+
+      if (currentVersion) {
+        const shouldUpdate = shouldUpdateApp(currentVersion, nextVersion)
+        if (!shouldUpdate) return
+      }
+    }
+
+    if (appUpdaterConfig.app.autoDownloadUpdate) {
+      downloadAppUpdate().catch((err) => {
         logger.error(err)
       })
     }
@@ -130,14 +135,14 @@ export const registerUpdater = async () => {
   autoUpdater.forceDevUpdateConfig = isDev
 
   setInterval(() => {
-    if (config.autoCheckUpdate) {
-      checkForUpdates().catch((err) => {
+    if (appUpdaterConfig.app.autoCheckUpdate) {
+      checkForAppUpdates().catch((err) => {
         logger.error("Error checking for updates", err)
       })
     }
-  }, config.checkUpdateInterval)
-  if (config.autoCheckUpdate) {
-    checkForUpdates().catch((err) => {
+  }, appUpdaterConfig.app.checkUpdateInterval)
+  if (appUpdaterConfig.app.autoCheckUpdate) {
+    checkForAppUpdates().catch((err) => {
       logger.error("Error checking for updates", err)
     })
   }

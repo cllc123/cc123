@@ -6,6 +6,7 @@ import { imageRefererMatches, selfRefererMatches } from "@follow/shared/image"
 import { app, BrowserWindow, session } from "electron"
 import squirrelStartup from "electron-squirrel-startup"
 
+import { DEVICE_ID } from "./constants/system"
 import { isDev, isMacOS } from "./env"
 import { initializeAppStage0, initializeAppStage1 } from "./init"
 import { updateProxy } from "./lib/proxy"
@@ -14,6 +15,7 @@ import { store } from "./lib/store"
 import { registerAppTray } from "./lib/tray"
 import { setAuthSessionToken, updateNotificationsToken } from "./lib/user"
 import { registerUpdater } from "./updater"
+import { cleanupOldRender } from "./updater/hot-updater"
 import {
   createMainWindow,
   getMainWindow,
@@ -23,6 +25,7 @@ import {
 
 if (isDev) console.info("[main] env loaded:", env)
 
+console.info("[main] device id:", DEVICE_ID)
 if (squirrelStartup) {
   app.quit()
 }
@@ -135,7 +138,7 @@ function bootstrap() {
     }
   })
 
-  app.on("before-quit", () => {
+  app.on("before-quit", async () => {
     // store window pos when before app quit
     const window = getMainWindow()
     if (!window || window.isDestroyed()) return
@@ -147,6 +150,8 @@ function bootstrap() {
       x: bounds.x,
       y: bounds.y,
     })
+
+    await cleanupOldRender()
   })
 
   const handleOpen = async (url: string) => {

@@ -17,6 +17,7 @@
     "analyze:web": "npx vite-bundle-visualizer",
     "build": "electron-vite build && electron-forge make",
     "build:macos": "electron-vite build && electron-forge make --arch=x64 --platform=darwin && electron-forge make --arch=arm64 --platform=darwin && tsx scripts/merge-yml.ts",
+    "build:render": "vite build -c vite.config.electron-render.ts",
     "build:web": "rm -rf out/web && vite build",
     "bump": "vv",
     "dedupe:locales": "eslint --fix locales/**/*.json",
@@ -65,6 +66,7 @@
     "@tailwindcss/container-queries": "0.1.1",
     "@tailwindcss/typography": "0.5.15",
     "@types/html-minifier-terser": "7.0.2",
+    "@types/js-yaml": "4.0.9",
     "@types/lodash-es": "4.17.12",
     "@types/node": "^22.8.7",
     "@types/react": "^18.3.12",
@@ -102,6 +104,7 @@
     "tailwindcss": "3.4.14",
     "tailwindcss-animate": "1.0.7",
     "tailwindcss-motion": "0.3.0-beta",
+    "tar": "7.4.3",
     "tsup": "8.3.5",
     "tsx": "4.19.2",
     "turbo": "2.2.3",
@@ -139,6 +142,9 @@
       "npm run dedupe:locales",
       "git add locales"
     ]
+  },
+  "render": {
+    "minimum": "0.1.0"
   },
   "bump": {
     "before": [
