@@ -1,23 +1,18 @@
 import { getRendererHandlers } from "@egoist/tipc/main"
-import { autoUpdater as defaultAutoUpdater } from "electron-updater"
 
 import { GITHUB_OWNER, GITHUB_REPO } from "~/constants/app"
 import { hotUpdateRender } from "~/updater/hot-updater"
 
-import { channel, isDev, isWindows } from "../env"
+import { channel, isDev } from "../env"
 import { logger } from "../logger"
 import type { RendererHandlers } from "../renderer-handlers"
 import { destroyMainWindow, getMainWindow } from "../window"
 import { appUpdaterConfig } from "./configs"
 import { CustomGitHubProvider } from "./custom-github-provider"
+import { autoUpdater } from "./electron-updater"
 import { shouldUpdateApp } from "./utils"
-import { WindowsUpdater } from "./windows-updater"
 
-// skip auto update in dev mode
-// const disabled = isDev
 const disabled = !appUpdaterConfig.enableAppUpdate
-
-const autoUpdater = isWindows ? new WindowsUpdater() : defaultAutoUpdater
 
 export const quitAndInstall = () => {
   const mainWindow = getMainWindow()

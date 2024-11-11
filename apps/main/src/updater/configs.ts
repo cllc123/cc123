@@ -7,6 +7,7 @@ export const appUpdaterConfig = {
   enableRenderHotUpdate: isNightlyBuild,
   // Disable app update will also disable renderer hot update
   enableAppUpdate: true,
+  // TODO remove debug value
   // enableAppUpdate: !isDev,
 
   app: {

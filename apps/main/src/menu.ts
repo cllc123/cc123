@@ -8,7 +8,8 @@ import { isDev, isMacOS } from "./env"
 import { clearAllDataAndConfirm } from "./lib/cleaner"
 import { t } from "./lib/i18n"
 import { revealLogFile } from "./logger"
-import { checkForAppUpdates, quitAndInstall } from "./updater"
+import { quitAndInstall } from "./updater"
+import { checkForAppUpdates } from "./updater/downloadAppUpdate"
 import { createSettingWindow, createWindow, getMainWindow } from "./window"
 
 export const registerAppMenu = () => {

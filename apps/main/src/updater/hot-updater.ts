@@ -23,8 +23,8 @@ import {
 } from "~/tracker"
 import { getMainWindow } from "~/window"
 
-import { checkForAppUpdates, downloadAppUpdate } from "."
 import { appUpdaterConfig } from "./configs"
+import { autoUpdater } from "./electron-updater"
 import type { GitHubReleasesItem } from "./types"
 import { shouldUpdateApp } from "./utils"
 
@@ -88,10 +88,18 @@ const canUpdateRender = async () => {
       appVersion,
       manifestVersion: manifest.version,
     })
+
     // Trigger app force update
-    checkForAppUpdates().then(() => {
-      downloadAppUpdate()
-    })
+    autoUpdater
+      .checkForUpdates()
+      .then(() => {
+        autoUpdater.downloadUpdate().catch((e) => {
+          logger.error("Failed to download update", e)
+        })
+      })
+      .catch((e) => {
+        logger.error("Failed to check for updates", e)
+      })
     return false
   }
 
