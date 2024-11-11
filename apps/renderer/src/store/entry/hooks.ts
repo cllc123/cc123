@@ -1,9 +1,13 @@
 import type { FeedViewType } from "@follow/constants"
+import type { CombinedEntryModel, FeedModel } from "@follow/models"
 import type { EntryReadHistoriesModel } from "@follow/shared/hono"
+import { useMemo } from "react"
 import { useShallow } from "zustand/react/shallow"
 
 import { FEED_COLLECTION_LIST, ROUTE_FEED_IN_FOLDER } from "~/constants"
 
+import { getFeedById } from "../feed"
+import { useInboxById } from "../inbox"
 import { useFeedIdByView } from "../subscription"
 import { getEntryIsInView, getFilteredFeedIds } from "./helper"
 import { useEntryStore } from "./store"
@@ -108,3 +112,19 @@ export const useEntryReadHistory = (
   entryId: string,
 ): Omit<EntryReadHistoriesModel, "entryId"> | null =>
   useEntryStore(useShallow((state) => state.readHistory[entryId]))
+
+export const usePopulatedEntry = (entry: FlatEntryModel | null, feed: FeedModel | null) => {
+  const inbox = useInboxById(entry?.inboxId)
+  const populatedEntry = useMemo(() => {
+    if (!entry) return null
+    if (!feed?.id && !inbox?.id) return null
+
+    return {
+      ...entry,
+      feeds: feed ? getFeedById(feed.id) : undefined,
+      inboxes: inbox,
+    } as CombinedEntryModel
+  }, [entry, feed, inbox])
+
+  return populatedEntry
+}
